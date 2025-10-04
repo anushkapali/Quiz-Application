@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Application</title>
+  <style>
+    body {
+      background: #f5f7fa;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .quiz-container, .result-container, .feedback-container, .start-container {
+      background: #fff;
+      padding: 25px;
+      margin: 20px 0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 700px;
+    }
+
+    h2 { margin-bottom: 15px; }
+
+    .question { margin-bottom: 20px; }
+
+    .option {
+      display: block;
+      padding: 12px 16px;
+      margin: 8px 0;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .option:hover { border-color: #007bff; background: #f0f8ff; }
+    .option.selected { border-color: #007bff; background: #e7f1ff; font-weight: bold; }
+    .option.correct { border-color: green; background: #e6ffe6; font-weight: bold; }
+    .option.wrong { border-color: red; background: #ffe6e6; font-weight: bold; }
+
+    button {
+      background: #007bff;
+      color: #fff;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s;
+      margin-top: 15px;
+    }
+
+    button:hover { background: #0056b3; }
+
+    .leaderboard {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .leaderboard th, .leaderboard td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .leaderboard th {
+      background: #007bff;
+      color: #fff;
+    }
+
+    .leaderboard tr:nth-child(even) { background: #f9f9f9; }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="start-container" id="start">
+    <h2>Welcome to the Quiz</h2>
+    <p>Please enter your first and last name to start:</p>
+    <input type="text" id="firstName" placeholder="Enter First Name" required>
+    <input type="text" id="lastName" placeholder="Enter Last Name" required>
+    <button onclick="startQuiz()">Start Quiz</button>
+    <p id="nameError" style="color:red; display:none;">Please enter both first and last name before starting.</p>
+  </div>
+
+  <div class="quiz-container" id="quiz" style="display:none;">
+    <h2>C Programming & General Quiz</h2>
+
+    <div class="question" data-correct="A">
+      <p>1. What is the output of the expression <code>2 + 3 * 4</code>?</p>
+      <div class="option">A) 14</div>
+      <div class="option">B) 20</div>
+      <div class="option">C) 10</div>
+      <div class="option">D) 12</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>2. Which of the following is a valid variable name in C?</p>
+      <div class="option">A) 123abc</div>
+      <div class="option">B) abc123</div>
+      <div class="option">C) abc-123</div>
+      <div class="option">D) @abc</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>3. What is the purpose of the <code>printf()</code> function in C?</p>
+      <div class="option">A) To get input from the user</div>
+      <div class="option">B) To print output to the screen</div>
+      <div class="option">C) To declare variables</div>
+      <div class="option">D) To perform calculations</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>4. What is the data type of the variable <code>x</code> in the declaration <code>int x = 5;</code>?</p>
+      <div class="option">A) Float</div>
+      <div class="option">B) Integer</div>
+      <div class="option">C) Character</div>
+      <div class="option">D) String</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>5. Which of the following operators is used to assign a value to a variable?</p>
+      <div class="option">A) ==</div>
+      <div class="option">B) =</div>
+      <div class="option">C) +</div>
+      <div class="option">D) -</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>6. What is the output of the code <code>int x = 5; printf("%d", x);</code>?</p>
+      <div class="option">A) 10</div>
+      <div class="option">B) 5</div>
+      <div class="option">C) Error</div>
+      <div class="option">D) None</div>
+    </div>
+
+    <div class="question" data-correct="D">
+      <p>7. Which programming language is known for its use in web development?</p>
+      <div class="option">A) Java</div>
+      <div class="option">B) Python</div>
+      <div class="option">C) HTML/CSS</div>
+      <div class="option">D) All of the above</div>
+    </div>
+
+    <div class="question" data-correct="B">
+      <p>8. What does the <code>%d</code> format specifier represent in <code>printf()</code>?</p>
+      <div class="option">A) String</div>
+      <div class="option">B) Integer</div>
+      <div class="option">C) Float</div>
+      <div class="option">D) Character</div>
+    </div>
+
+    <div class="question" data-correct="C">
+      <p>9. What is the purpose of comments in code?</p>
+      <div class="option">A) To execute code</div>
+      <div class="option">B) To declare variables</div>
+      <div class="option">C) To explain code</div>
+      <div class="option">D) To print output</div>
+    </div>
+
+    <div class="question" data-correct="D">
+      <p>10. Which of the following is NOT a programming language?</p>
+      <div class="option">A) Java</div>
+      <div class="option">B) Python</div>
+      <div class="option">C) HTML</div>
+      <div class="option">D) Photoshop</div>
+    </div>
+
+    <button onclick="submitQuiz()">Submit Quiz</button>
+  </div>
+
+  <div class="result-container" id="result" style="display:none;">
+    <h2>Score Card</h2>
+    <p id="score"></p>
+
+    <h2>Leaderboard</h2>
+    <table class="leaderboard" id="leaderboard">
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Score</th>
+      </tr>
+    </table>
+  </div>
+
+  <div class="feedback-container" id="feedback" style="display:none;">
+    <h2>Give Your Feedback</h2>
+    <form id="feedbackForm" onsubmit="submitFeedback(event)">
+      <textarea name="feedback_message" placeholder="Write your feedback here..." required></textarea>
+      <button type="submit">Submit Feedback</button>
+    </form>
+    <p id="feedbackMsg" style="color:green; font-weight:bold; display:none;">Thank you for your feedback!</p>
+    <p id="emailStatus" style="color:red; font-weight:bold; display:none;"></p>
+  </div>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+  // Initialize EmailJS
+  (function() {
+    emailjs.init("bewni_aSB4-eIToRc"); // your public key
+  })();
+
+  // EmailJS IDs
+  const SERVICE_ID = "service_4auh4nq";
+  const TEMPLATE_ID = "template_mypv469"; // same for both quiz score and feedback
+
+  let leaderboardData = JSON.parse(localStorage.getItem("leaderboard")) || [];
+  let currentUser = "";
+  let finalScore = 0;
+  const totalQuestions = 10;
+
+  function startQuiz() {
+    let first = document.getElementById("firstName").value.trim();
+    let last = document.getElementById("lastName").value.trim();
+
+    if (first === "" || last === "") {
+      document.getElementById("nameError").style.display = "block";
+      return;
+    }
+    currentUser = first + " " + last;
+    document.getElementById("start").style.display = "none";
+    document.getElementById("quiz").style.display = "block";
+  }
+
+  document.querySelectorAll('.option').forEach(opt => {
+    opt.addEventListener('click', function() {
+      let parent = this.parentElement;
+      parent.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  async function sendScoreEmail(name, score, total) {
+    const templateParams = {
+      user_name: name,
+      quiz_score: ${score}/${total},
+      feedback_message: "No feedback yet",
+      email: "quizapp662@gmail.com" // this must match your template’s {{email}}
+    };
+
+    try {
+      const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
+      console.log("✅ Quiz Score Email Sent!", response);
+      document.getElementById('emailStatus').style.display = "block";
+      document.getElementById('emailStatus').style.color = "green";
+      document.getElementById('emailStatus').innerText = "Quiz score sent to admin email.";
+    } catch (error) {
+      console.error("❌ Failed to send quiz score email:", error);
+      document.getElementById('emailStatus').style.display = "block";
+      document.getElementById('emailStatus').style.color = "red";
+      document.getElementById('emailStatus').innerText = "Failed to send quiz score email.";
+    }
+  }
+
+  function submitQuiz() {
+    let questions = document.querySelectorAll('.question');
+    let score = 0;
+
+    questions.forEach(q => {
+      let correct = q.getAttribute('data-correct');
+      let selected = q.querySelector('.selected');
+      let options = q.querySelectorAll('.option');
+
+      options.forEach(opt => {
+        opt.classList.remove('correct', 'wrong');
+        if (opt.innerText.trim().startsWith(correct)) {
+          opt.classList.add('correct');
+        }
+      });
+
+      if (selected) {
+        if (selected.innerText.trim().startsWith(correct)) {
+          score++;
+        } else {
+          selected.classList.add('wrong');
+        }
+      }
+    });
+
+    finalScore = score;
+    leaderboardData.push({ name: currentUser, score });
+    leaderboardData.sort((a, b) => b.score - a.score);
+    localStorage.setItem("leaderboard", JSON.stringify(leaderboardData));
+
+    document.getElementById('quiz').style.display = "none";
+    document.getElementById('result').style.display = "block";
+    document.getElementById('feedback').style.display = "block";
+
+    document.getElementById('score').innerText = currentUser + ", you scored: " + finalScore + "/" + totalQuestions;
+    renderLeaderboard();
+
+    // Send quiz score email
+    sendScoreEmail(currentUser, finalScore, totalQuestions);
+  }
+
+  function renderLeaderboard() {
+    let table = document.getElementById('leaderboard');
+    table.innerHTML = `
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Score</th>
+      </tr>
+    `;
+    leaderboardData.forEach((player, index) => {
+      let row = `<tr>
+        <td>${index + 1}</td>
+        <td>${player.name}</td>
+        <td>${player.score}/${totalQuestions}</td>
+      </tr>`;
+      table.innerHTML += row;
+    });
+  }
+
+  async function submitFeedback(event) {
+    event.preventDefault();
+    const feedbackText = document.querySelector('textarea[name="feedback_message"]').value.trim();
+
+    if (!feedbackText) {
+      alert("Please enter your feedback before submitting.");
+      return;
+    }
+
+    const templateParams = {
+      user_name: currentUser,
+      quiz_score: ${finalScore}/${totalQuestions},
+      feedback_message: feedbackText,
+      email: "quizapp662@gmail.com" // your admin email
+    };
+
+    try {
+      const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
+      console.log("✅ Feedback Email Sent!", response);
+      document.getElementById('feedbackMsg').style.display = "block";
+      document.getElementById('feedbackMsg').innerText = "Thank you for your feedback!";
+      document.querySelector('textarea[name="feedback_message"]').value = "";
+    } catch (error) {
+      console.error("❌ Failed to send feedback email:", error);
+      alert("Failed to submit feedback. Please try again.");
+    }
+  }
+</script>
+
+</body>
+</html>
