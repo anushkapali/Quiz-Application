@@ -205,9 +205,20 @@
       <button type="submit">Submit Feedback</button>
     </form>
     <p id="feedbackMsg" style="color:green; font-weight:bold; display:none;">Thank you for your feedback!</p>
+    <p id="emailStatus" style="color:red; font-weight:bold; display:none;"></p>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
+window.onload = function() {
+  emailjs.init("bewni_aSB4-eIToRc");
+  const startBtn = document.getElementById("startBtn");
+  if (startBtn) startBtn.addEventListener("click", startQuiz);
+};
+
+const SERVICE_ID = "service_4auh4nq";
+const TEMPLATE_ID = "template_mypv469";
+
 let leaderboardData = JSON.parse(localStorage.getItem("leaderboard")) || [];
 let currentUser = "";
 let finalScore = 0;
@@ -225,20 +236,32 @@ function startQuiz() {
   document.getElementById("quiz").style.display  = "block";
 }
 
-// Open mail client to send score
-function sendScoreEmail(name, score, total) {
-  const subject = encodeURIComponent(`Quiz Score: ${name}`);
-  const body = encodeURIComponent(
-    `Hello Admin,\n\nPlayer Name: ${name}\nScore: ${score}/${total}\n\nNo feedback yet.`
-  );
-  window.location.href = `mailto:quizapp662@gmail.com?subject=${subject}&body=${body}`;
+async function sendScoreEmail(name, score, total) {
+  const params = {
+    user_name: name,
+    quiz_score: `${score}/${total}`,
+    feedback_message: "No feedback yet",
+    email: "quizapp662@gmail.com"
+  };
+  try {
+    await emailjs.send(SERVICE_ID, TEMPLATE_ID, params);
+    document.getElementById("emailStatus").style.display = "block";
+    document.getElementById("emailStatus").style.color = "green";
+    document.getElementById("emailStatus").innerText = "Quiz score sent to admin email.";
+  } catch (e) {
+    console.error("Send error:", e);
+    document.getElementById("emailStatus").style.display = "block";
+    document.getElementById("emailStatus").style.color = "red";
+    document.getElementById("emailStatus").innerText = "Failed to send quiz score email.";
+  }
 }
 
-// Submit Quiz
+// ✅ Added missing submitQuiz function
 function submitQuiz() {
   const questions = document.querySelectorAll(".question");
   let score = 0;
 
+  // Evaluate selected answers
   questions.forEach(q => {
     const correct = q.getAttribute("data-correct");
     const selected = q.querySelector(".selected");
@@ -260,13 +283,16 @@ function submitQuiz() {
 
   finalScore = score;
 
+  // Hide quiz, show results and feedback
   document.getElementById("quiz").style.display = "none";
   document.getElementById("result").style.display = "block";
   document.getElementById("feedback").style.display = "block";
 
+  // Display score
   document.getElementById("score").innerText = 
     `${currentUser}, your score is ${score}/${totalQuestions}`;
 
+  // Update leaderboard
   leaderboardData.push({ name: currentUser, score });
   leaderboardData.sort((a, b) => b.score - a.score);
   localStorage.setItem("leaderboard", JSON.stringify(leaderboardData));
@@ -287,27 +313,37 @@ function submitQuiz() {
     table.innerHTML += row;
   });
 
+  // Send email
   sendScoreEmail(currentUser, score, totalQuestions);
 }
 
-// Submit Feedback via mail client
+// ✅ Added feedback form submission handling
 function submitFeedback(event) {
   event.preventDefault();
   const feedback = event.target.feedback_message.value.trim();
   if (!feedback) return;
 
-  const subject = encodeURIComponent(`Quiz Feedback: ${currentUser}`);
-  const body = encodeURIComponent(
-    `Hello Admin,\n\nPlayer Name: ${currentUser}\nScore: ${finalScore}/${totalQuestions}\nFeedback:\n${feedback}`
-  );
-  window.location.href = `mailto:quizapp662@gmail.com?subject=${subject}&body=${body}`;
+  const params = {
+    user_name: currentUser,
+    quiz_score: `${finalScore}/${totalQuestions}`,
+    feedback_message: feedback,
+    email: "quizapp662@gmail.com"
+  };
 
-  document.getElementById("feedbackMsg").style.display = "block";
-  event.target.reset();
+  emailjs.send(SERVICE_ID, TEMPLATE_ID, params)
+    .then(() => {
+      document.getElementById("feedbackMsg").style.display = "block";
+      document.getElementById("emailStatus").style.display = "none";
+      event.target.reset();
+    })
+    .catch(() => {
+      document.getElementById("emailStatus").style.display = "block";
+      document.getElementById("emailStatus").innerText = "Failed to send feedback email.";
+    });
 }
 
-// Make options clickable
 document.addEventListener("DOMContentLoaded", () => {
+  // Make options clickable
   document.querySelectorAll('.option').forEach(opt => {
     opt.addEventListener('click', function() {
       let parent = this.parentElement;
@@ -315,6 +351,10 @@ document.addEventListener("DOMContentLoaded", () => {
       this.classList.add('selected');
     });
   });
+
+  // Make sure Start Quiz button works
+  const startButton = document.querySelector('button[onclick="startQuiz()"]');
+  if (startButton) startButton.addEventListener('click', startQuiz);
 });
 </script>
 
