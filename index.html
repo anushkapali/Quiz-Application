@@ -205,39 +205,109 @@
       <button type="submit">Submit Feedback</button>
     </form>
     <p id="feedbackMsg" style="color:green; font-weight:bold; display:none;">Thank you for your feedback!</p>
-    <p id="emailStatus" style="color:red; font-weight:bold; display:none;"></p>
   </div>
 
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
 <script>
-  // Initialize EmailJS
-  (function() {
-    emailjs.init("bewni_aSB4-eIToRc"); // your public key
-  })();
+let leaderboardData = JSON.parse(localStorage.getItem("leaderboard")) || [];
+let currentUser = "";
+let finalScore = 0;
+const totalQuestions = 10;
 
-  // EmailJS IDs
-  const SERVICE_ID = "service_4auh4nq";
-  const TEMPLATE_ID = "template_mypv469"; // same for both quiz score and feedback
-
-  let leaderboardData = JSON.parse(localStorage.getItem("leaderboard")) || [];
-  let currentUser = "";
-  let finalScore = 0;
-  const totalQuestions = 10;
-
-  function startQuiz() {
-    let first = document.getElementById("firstName").value.trim();
-    let last = document.getElementById("lastName").value.trim();
-
-    if (first === "" || last === "") {
-      document.getElementById("nameError").style.display = "block";
-      return;
-    }
-    currentUser = first + " " + last;
-    document.getElementById("start").style.display = "none";
-    document.getElementById("quiz").style.display = "block";
+function startQuiz() {
+  const first = document.getElementById("firstName").value.trim();
+  const last  = document.getElementById("lastName").value.trim();
+  if (!first || !last) {
+    document.getElementById("nameError").style.display = "block";
+    return;
   }
+  currentUser = first + " " + last;
+  document.getElementById("start").style.display = "none";
+  document.getElementById("quiz").style.display  = "block";
+}
 
+// Open mail client to send score
+function sendScoreEmail(name, score, total) {
+  const subject = encodeURIComponent(`Quiz Score: ${name}`);
+  const body = encodeURIComponent(
+    `Hello Admin,\n\nPlayer Name: ${name}\nScore: ${score}/${total}\n\nNo feedback yet.`
+  );
+  window.location.href = `mailto:quizapp662@gmail.com?subject=${subject}&body=${body}`;
+}
+
+// Submit Quiz
+function submitQuiz() {
+  const questions = document.querySelectorAll(".question");
+  let score = 0;
+
+  questions.forEach(q => {
+    const correct = q.getAttribute("data-correct");
+    const selected = q.querySelector(".selected");
+    if (selected) {
+      const selectedText = selected.innerText.trim().charAt(0);
+      if (selectedText === correct) {
+        score++;
+        selected.classList.add("correct");
+      } else {
+        selected.classList.add("wrong");
+        q.querySelectorAll(".option").forEach(opt => {
+          if (opt.innerText.trim().charAt(0) === correct) {
+            opt.classList.add("correct");
+          }
+        });
+      }
+    }
+  });
+
+  finalScore = score;
+
+  document.getElementById("quiz").style.display = "none";
+  document.getElementById("result").style.display = "block";
+  document.getElementById("feedback").style.display = "block";
+
+  document.getElementById("score").innerText = 
+    `${currentUser}, your score is ${score}/${totalQuestions}`;
+
+  leaderboardData.push({ name: currentUser, score });
+  leaderboardData.sort((a, b) => b.score - a.score);
+  localStorage.setItem("leaderboard", JSON.stringify(leaderboardData));
+
+  const table = document.getElementById("leaderboard");
+  table.innerHTML = `
+    <tr>
+      <th>Rank</th>
+      <th>Name</th>
+      <th>Score</th>
+    </tr>`;
+  leaderboardData.forEach((entry, index) => {
+    const row = `<tr>
+      <td>${index + 1}</td>
+      <td>${entry.name}</td>
+      <td>${entry.score}</td>
+    </tr>`;
+    table.innerHTML += row;
+  });
+
+  sendScoreEmail(currentUser, score, totalQuestions);
+}
+
+// Submit Feedback via mail client
+function submitFeedback(event) {
+  event.preventDefault();
+  const feedback = event.target.feedback_message.value.trim();
+  if (!feedback) return;
+
+  const subject = encodeURIComponent(`Quiz Feedback: ${currentUser}`);
+  const body = encodeURIComponent(
+    `Hello Admin,\n\nPlayer Name: ${currentUser}\nScore: ${finalScore}/${totalQuestions}\nFeedback:\n${feedback}`
+  );
+  window.location.href = `mailto:quizapp662@gmail.com?subject=${subject}&body=${body}`;
+
+  document.getElementById("feedbackMsg").style.display = "block";
+  event.target.reset();
+}
+
+// Make options clickable
+document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.option').forEach(opt => {
     opt.addEventListener('click', function() {
       let parent = this.parentElement;
@@ -245,116 +315,7 @@
       this.classList.add('selected');
     });
   });
-
-  async function sendScoreEmail(name, score, total) {
-    const templateParams = {
-      user_name: name,
-      quiz_score: ${score}/${total},
-      feedback_message: "No feedback yet",
-      email: "quizapp662@gmail.com" // this must match your template’s {{email}}
-    };
-
-    try {
-      const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-      console.log("✅ Quiz Score Email Sent!", response);
-      document.getElementById('emailStatus').style.display = "block";
-      document.getElementById('emailStatus').style.color = "green";
-      document.getElementById('emailStatus').innerText = "Quiz score sent to admin email.";
-    } catch (error) {
-      console.error("❌ Failed to send quiz score email:", error);
-      document.getElementById('emailStatus').style.display = "block";
-      document.getElementById('emailStatus').style.color = "red";
-      document.getElementById('emailStatus').innerText = "Failed to send quiz score email.";
-    }
-  }
-
-  function submitQuiz() {
-    let questions = document.querySelectorAll('.question');
-    let score = 0;
-
-    questions.forEach(q => {
-      let correct = q.getAttribute('data-correct');
-      let selected = q.querySelector('.selected');
-      let options = q.querySelectorAll('.option');
-
-      options.forEach(opt => {
-        opt.classList.remove('correct', 'wrong');
-        if (opt.innerText.trim().startsWith(correct)) {
-          opt.classList.add('correct');
-        }
-      });
-
-      if (selected) {
-        if (selected.innerText.trim().startsWith(correct)) {
-          score++;
-        } else {
-          selected.classList.add('wrong');
-        }
-      }
-    });
-
-    finalScore = score;
-    leaderboardData.push({ name: currentUser, score });
-    leaderboardData.sort((a, b) => b.score - a.score);
-    localStorage.setItem("leaderboard", JSON.stringify(leaderboardData));
-
-    document.getElementById('quiz').style.display = "none";
-    document.getElementById('result').style.display = "block";
-    document.getElementById('feedback').style.display = "block";
-
-    document.getElementById('score').innerText = currentUser + ", you scored: " + finalScore + "/" + totalQuestions;
-    renderLeaderboard();
-
-    // Send quiz score email
-    sendScoreEmail(currentUser, finalScore, totalQuestions);
-  }
-
-  function renderLeaderboard() {
-    let table = document.getElementById('leaderboard');
-    table.innerHTML = `
-      <tr>
-        <th>Rank</th>
-        <th>Name</th>
-        <th>Score</th>
-      </tr>
-    `;
-    leaderboardData.forEach((player, index) => {
-      let row = `<tr>
-        <td>${index + 1}</td>
-        <td>${player.name}</td>
-        <td>${player.score}/${totalQuestions}</td>
-      </tr>`;
-      table.innerHTML += row;
-    });
-  }
-
-  async function submitFeedback(event) {
-    event.preventDefault();
-    const feedbackText = document.querySelector('textarea[name="feedback_message"]').value.trim();
-
-    if (!feedbackText) {
-      alert("Please enter your feedback before submitting.");
-      return;
-    }
-
-    const templateParams = {
-      user_name: currentUser,
-      quiz_score: ${finalScore}/${totalQuestions},
-      feedback_message: feedbackText,
-      email: "quizapp662@gmail.com" // your admin email
-    };
-
-    try {
-      const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-      console.log("✅ Feedback Email Sent!", response);
-      document.getElementById('feedbackMsg').style.display = "block";
-      document.getElementById('feedbackMsg').innerText = "Thank you for your feedback!";
-      document.querySelector('textarea[name="feedback_message"]').value = "";
-    } catch (error) {
-      console.error("❌ Failed to send feedback email:", error);
-      alert("Failed to submit feedback. Please try again.");
-    }
-  }
+});
 </script>
 
 </body>
